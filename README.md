@@ -25,7 +25,7 @@ PostgreSQL's primary key on `event_id` settles concurrent submissions. When the 
 
 ### DCSA field mapping
 
-The fixtures follow the vessel transport examples in DCSA's `Load Test Data` request and use the transport event definitions from the 2024 Q1 Information Model. In the direct sea-leg model, `ARRI` means the vessel reached the destination port. [DCSA sample collection at the reviewed commit](https://github.com/dcsaorg/DCSA-TNT/blob/af619ff6abefe1bf6d668cf88477c1c2ee20cd08/postman_collection.json#L18) · [DCSA Information Model 2024 Q1](https://reference.dcsa.org/files/content/standards/guidelines/information-model-2024-q1/dcsa-information-model-2024-q1.pdf)
+The fixtures follow the vessel transport examples in DCSA's `Load Test Data` request and use the transport event definitions from the 2024 Q1 Information Model. In the direct sea-leg model, `ARRI` means the vessel reached the destination port. [DCSA transport event examples](https://github.com/dcsaorg/DCSA-TNT/blob/af619ff6abefe1bf6d668cf88477c1c2ee20cd08/postman_collection.json#L18) · [DCSA Information Model 2024 Q1](https://reference.dcsa.org/files/content/standards/guidelines/information-model-2024-q1/dcsa-information-model-2024-q1.pdf)
 
 | DCSA example field | Service field |
 | --- | --- |
@@ -53,27 +53,48 @@ PostgreSQL stored 11 unique events across six bookings. The demo resubmitted the
 
 ## Run the API locally
 
-For a fresh local stack, set a password and keep it for subsequent starts of the same database volume. The API uses an available loopback port.
+For a fresh database, the block appends a generated password to the ignored local `.env` file and preserves other settings. If the database volume already exists, set `POSTGRES_PASSWORD` in `.env` to the original password before running the block. Use single quotes around the value if it contains a dollar sign. The block unsets any exported `POSTGRES_PASSWORD` inside the subshell so Compose uses the file.
+
+`docker compose down` retains the database volume. Run the same block again to reuse the saved password and database. The first post returns `201`, and the replay returns `200`.
 
 ```sh
-export POSTGRES_PASSWORD="$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))')"
-docker compose up --build --wait
-api_url="http://$(docker compose port api 8080)"
-event="$(python3 -c 'import json; print(json.dumps(json.load(open("fixtures/planned-arrival.json"))[0]))')"
-curl -i -H 'Content-Type: application/json' --data "$event" "$api_url/events"
-curl -sS "$api_url/bookings/DEMO-PLANNED"
-docker compose down
+(
+  set -e
+  unset POSTGRES_PASSWORD
+  umask 077
+  [ -e .env ] || touch .env
+  if ! docker compose --env-file .env config --quiet 2>/dev/null; then
+    volume_name="$(docker compose --env-file .env config --no-interpolate --format json |
+      python3 -c 'import json, sys; print(json.load(sys.stdin)["volumes"]["shipment-data"]["name"])')"
+    existing_volumes="$(docker volume ls --filter "name=$volume_name" --format '{{.Name}}')"
+    if printf '%s\n' "$existing_volumes" | grep -Fxq "$volume_name"; then
+      printf '%s\n' 'Set POSTGRES_PASSWORD in .env to the original database password.' >&2
+      exit 1
+    fi
+    chmod 600 .env
+    python3 -c 'import secrets; print("\nPOSTGRES_PASSWORD=" + secrets.token_urlsafe(24))' >> .env
+  fi
+  docker compose --env-file .env up --build --wait
+  api_url="http://$(docker compose --env-file .env port api 8080)"
+  event="$(python3 -c 'import json; print(json.dumps(json.load(open("fixtures/planned-arrival.json"))[0]))')"
+  curl -fsSi -H 'Content-Type: application/json' --data "$event" "$api_url/events"
+  curl -fsS "$api_url/bookings/DEMO-PLANNED"
+  docker compose --env-file .env down
+)
 ```
 
 ## Verify
 
 ```sh
+python3 scripts/verify.py timestamps
 python3 scripts/verify.py test
 demo_result="$(mktemp)"
 python3 scripts/verify.py demo > "$demo_result"
 diff -u examples/demo-output.txt "$demo_result"
 ```
 
-The JUnit suite checks reconciliation rules and HTTP behavior against PostgreSQL, including concurrent replays and conflicts, time normalization, malformed requests, missing bookings and both steps of the late-departure case.
+The Python 3.9 checks sent an actual arrival before its departure record. The arrival occurred one microsecond after departure. Adding the departure moved it to the start of the timeline and cleared `missing_actual_departure`. Both equivalent timestamp replays returned `200` with one stored event, and the precision check verified truncation from nine fractional digits to six.
+
+The JUnit suite checks reconciliation rules and HTTP behavior against PostgreSQL, including concurrent replays and conflicts, malformed requests and missing bookings.
 
 The build uses Java 25 LTS, Maven 3.10.0, Spring Boot 4.2.0 and PostgreSQL 18.7. The Spring Boot parent fixes dependency and plugin versions, including JUnit 6.1.3 and PostgreSQL JDBC 42.7.14. The container images use version tags and immutable digests for Linux arm64 and amd64. [Spring Boot requirements](https://docs.spring.io/spring-boot/4.2/system-requirements.html) · [PostgreSQL support policy](https://www.postgresql.org/support/versioning/)
