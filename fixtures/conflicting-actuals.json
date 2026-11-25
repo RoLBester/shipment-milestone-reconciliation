@@ -1,0 +1,16 @@
+[
+  {
+    "eventId": "069e46bb-c4a4-43af-ac63-000000000011",
+    "bookingReference": "DEMO-CONFLICT",
+    "eventDateTime": "2026-10-24T08:00:00Z",
+    "transportEventTypeCode": "DEPA",
+    "eventClassifierCode": "ACT"
+  },
+  {
+    "eventId": "069e46bb-c4a4-43af-ac63-000000000010",
+    "bookingReference": "DEMO-CONFLICT",
+    "eventDateTime": "2026-10-24T08:00:00Z",
+    "transportEventTypeCode": "DEPA",
+    "eventClassifierCode": "ACT"
+  }
+]

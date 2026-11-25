@@ -1,0 +1,16 @@
+[
+  {
+    "eventId": "069e46bb-c4a4-43af-ac63-000000000004",
+    "bookingReference": "DEMO-ARRIVED",
+    "eventDateTime": "2026-10-24T08:00:00Z",
+    "transportEventTypeCode": "DEPA",
+    "eventClassifierCode": "ACT"
+  },
+  {
+    "eventId": "069e46bb-c4a4-43af-ac63-000000000005",
+    "bookingReference": "DEMO-ARRIVED",
+    "eventDateTime": "2026-10-26T10:00:00Z",
+    "transportEventTypeCode": "ARRI",
+    "eventClassifierCode": "ACT"
+  }
+]

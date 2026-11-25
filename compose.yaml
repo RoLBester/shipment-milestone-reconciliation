@@ -1,0 +1,45 @@
+services:
+  db:
+    image: postgres:18.7-bookworm@sha256:e742a2668255221388004f3a42b6150a2103f5054ab3a4a93ae9e4f01e551c35
+    environment:
+      POSTGRES_DB: shipments
+      POSTGRES_USER: shipments
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD before starting Compose}"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-U", "shipments", "-d", "shipments"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    volumes:
+      - shipment-data:/var/lib/postgresql
+
+  api:
+    build: .
+    environment: &datasource
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/shipments
+      SPRING_DATASOURCE_USERNAME: shipments
+      SPRING_DATASOURCE_PASSWORD: "${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD before starting Compose}"
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1::8080"
+    healthcheck:
+      test: ["CMD", "bash", "-c", "true > /dev/tcp/127.0.0.1/8080"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+
+  tests:
+    profiles: [test]
+    build:
+      context: .
+      target: build
+    environment: *datasource
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["mvn", "--batch-mode", "--no-transfer-progress", "test"]
+
+volumes:
+  shipment-data:

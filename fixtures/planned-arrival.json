@@ -1,0 +1,9 @@
+[
+  {
+    "eventId": "069e46bb-c4a4-43af-ac63-000000000001",
+    "bookingReference": "DEMO-PLANNED",
+    "eventDateTime": "2026-10-26T17:30:00+09:00",
+    "transportEventTypeCode": "ARRI",
+    "eventClassifierCode": "PLN"
+  }
+]

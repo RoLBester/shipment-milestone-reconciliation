@@ -1,0 +1,23 @@
+Starting unique events in PostgreSQL: 0
+DEMO-PLANNED | awaiting_departure | issues: none | events: 1
+  2026-10-26T08:30:00Z  ARRI PLN  069e46bb-c4a4-43af-ac63-000000000001
+DEMO-TRANSIT | in_transit | issues: none | events: 2
+  2026-10-24T01:15:00Z  DEPA ACT  069e46bb-c4a4-43af-ac63-000000000002
+  2026-10-26T09:30:00Z  ARRI EST  069e46bb-c4a4-43af-ac63-000000000003
+DEMO-ARRIVED | arrived | issues: none | events: 2
+  2026-10-24T08:00:00Z  DEPA ACT  069e46bb-c4a4-43af-ac63-000000000004
+  2026-10-26T10:00:00Z  ARRI ACT  069e46bb-c4a4-43af-ac63-000000000005
+DEMO-LATE (arrival received first) | needs_review | issues: missing_actual_departure | events: 1
+  2026-10-26T19:05:00Z  ARRI ACT  069e46bb-c4a4-43af-ac63-000000000006
+DEMO-LATE (after departure received) | arrived | issues: none | events: 2
+  2026-10-25T01:15:00Z  DEPA ACT  069e46bb-c4a4-43af-ac63-000000000007
+  2026-10-26T19:05:00Z  ARRI ACT  069e46bb-c4a4-43af-ac63-000000000006
+DEMO-CHRONOLOGY | needs_review | issues: inconsistent_chronology | events: 2
+  2026-10-24T08:00:00Z  DEPA ACT  069e46bb-c4a4-43af-ac63-000000000008
+  2026-10-24T08:00:00Z  ARRI ACT  069e46bb-c4a4-43af-ac63-000000000009
+DEMO-CONFLICT | needs_review | issues: conflicting_actual_events | events: 2
+  2026-10-24T08:00:00Z  DEPA ACT  069e46bb-c4a4-43af-ac63-000000000010
+  2026-10-24T08:00:00Z  DEPA ACT  069e46bb-c4a4-43af-ac63-000000000011
+Accepted unique events in PostgreSQL: 11
+Equivalent offset replay for DEMO-TRANSIT: HTTP 200
+Unique events in PostgreSQL after replay: 11
